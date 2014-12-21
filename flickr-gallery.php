@@ -121,6 +121,10 @@ class DC_FlickrGallery {
 			add_action('wp_head', array('DC_FlickrGallery', 'header'));
 			add_action('wp_footer', array('DC_FlickrGallery', 'footer'));
 		}
+
+		add_shortcode('flickr-gallery', array('DC_FlickrGallery', 'gallery'));
+		remove_shortcode('flickr'); add_shortcode('flickr', array('DC_FlickrGallery', 'image'));
+
     }
 	
 	function wp_http_post($url, $data) {
@@ -1117,11 +1121,11 @@ class DC_FlickrGallery {
 
 }
 
-add_shortcode('flickr-gallery', array('DC_FlickrGallery', 'gallery'));
-add_shortcode('flickr', array('DC_FlickrGallery', 'image'));
+//add_shortcode('flickr-gallery', array('DC_FlickrGallery', 'gallery'));
+//remove_shortcode('flickr'); add_shortcode('flickr', array('DC_FlickrGallery', 'image'));
 
 add_action('admin_menu', array('DC_FlickrGallery', 'add_settings_page'));
-add_action('init', array('DC_FlickrGallery', 'init'));
+add_action('init', array('DC_FlickrGallery', 'init'), 999);
 add_action('wp_ajax_flickr_gallery_settings', array('DC_FlickrGallery', 'save_settings'));
 add_action('wp_ajax_flickr_gallery_auth', array('DC_FlickrGallery', 'auth_init'));
 
