@@ -52,7 +52,7 @@ class DC_FlickrGallery {
 	 *
 	 * @return string
 	 */
-	function getPath() {
+	static function getPath() {
 		return dirname(__FILE__) . '/';
 	}
 	
@@ -61,13 +61,13 @@ class DC_FlickrGallery {
 	 *
 	 * @return string
 	 */
-	function getURL() {
+	static function getURL() {
 		return home_url('wp-content') . '/plugins/'.basename(dirname(__FILE__)) . '/';
 
 		//return WP_CONTENT_URL.'/plugins/'.basename(dirname(__FILE__)) . '/';
 	}
 	
-	function get_major_version() {
+	static function get_major_version() {
 		global $wp_version;
 		return (float) $wp_version;
 	}
@@ -76,7 +76,7 @@ class DC_FlickrGallery {
 	 * Initializes the phpFlickr object.  Called on WP's init hook.
 	 *
 	 */
-    function init() {
+    static function init() {
 		load_plugin_textdomain('flickr-gallery', 'wp-content/plugins/' . basename(dirname(__FILE__)) . '/i18n');
 		if ( get_option('fg-API-key') ) {
 			global $phpFlickr;
@@ -121,19 +121,15 @@ class DC_FlickrGallery {
 			add_action('wp_head', array('DC_FlickrGallery', 'header'));
 			add_action('wp_footer', array('DC_FlickrGallery', 'footer'));
 		}
-
-		add_shortcode('flickr-gallery', array('DC_FlickrGallery', 'gallery'));
-		remove_shortcode('flickr'); add_shortcode('flickr', array('DC_FlickrGallery', 'image'));
-
     }
 	
-	function wp_http_post($url, $data) {
+	static function wp_http_post($url, $data) {
 		$http = new WP_Http();
 		$response = $http->post($url, array('body' => $data));
 		return $response['body'];
 	}
 	
-	function curl_post($url, $data) {
+	static function curl_post($url, $data) {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_HEADER, 0);
 	    @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
@@ -160,7 +156,7 @@ class DC_FlickrGallery {
 		return $result->response;
 	}
 	
-	function cache_set($key, $value, $expire) {
+	static function cache_set($key, $value, $expire) {
 		global $wpdb;
 		$query = '
 			INSERT INTO `' . $wpdb->prefix . 'phpflickr_cache`
@@ -190,7 +186,7 @@ class DC_FlickrGallery {
      * @param string $content
      * @return string
      */
-    function gallery($attr, $content = '') {
+    static function gallery($attr, $content = '') {
 		if ( get_option('fg-API-key') ) {
 			$mv = DC_FlickrGallery::get_major_version() >= 2.8;
 			$id = substr(md5(microtime()), 0, 8);
@@ -201,6 +197,8 @@ class DC_FlickrGallery {
 				'sort' => null,
 				'tags' => null,
 				'mode' => null,
+				'extras' => null,
+				'action' => null,
 				'tag_mode' => 'any',
 				'user_id' => (isset($attr['mode']) && $attr['mode'] == 'search') ? null : get_option('fg-user_id'),
 				'per_page' => get_option('fg-per_page'),
@@ -211,12 +209,12 @@ class DC_FlickrGallery {
 			if ( strpos($attr['extras'], 'media') === false ) $attr['extras'] .= ',media';
 			ob_start();
 			switch ($attr['mode']) {
-				case 'photoset' :
-					$url = DC_FlickrGallery::get_photo_url($photos['owner']);
+				case 'photoset' : 
+					$url = DC_FlickrGallery::get_photo_url($photos['owner']); 
 					$pager = new phpFlickr_pager($phpFlickr, 'flickr.photosets.getPhotos', array(
 						'photoset_id' => $attr['photoset'],
 						'extras' => $attr['extras'],
-					), $attr['per_page']);
+					), $attr['per_page']); 
 
 					break;
 				case 'tag' :
@@ -645,7 +643,7 @@ class DC_FlickrGallery {
      * @param string $content
      * @return string
      */
-    function image($attr, $content) {
+    static function image($attr, $content) {
 		if ( get_option('fg-API-key') ) {
 			global $phpFlickr;
 			$attr = shortcode_atts(array(
@@ -704,12 +702,12 @@ class DC_FlickrGallery {
      * Sets up the settings page
      *
      */
-	function add_settings_page() {
+	static function add_settings_page() {
 		load_plugin_textdomain('flickr-gallery', DC_FlickrGallery::getPath() . 'i18n/');
 		add_options_page(__('Flickr Gallery', 'flickr-gallery'), __('Flickr Gallery', 'flickr-gallery'), 8, __FILE__, array('DC_FlickrGallery', 'settings_page'));	
 	}
 	 
-	function save_settings() {
+	static function save_settings() {
 		global $wpdb;
 		check_admin_referer('flickr-gallery');
 		$options = explode(',', $_POST['page_options']);
@@ -774,7 +772,7 @@ class DC_FlickrGallery {
 		exit;
 	}
 	
-	function get_auth_token() {
+	static function get_auth_token() {
 		check_admin_referer('flickr-gallery-auth');
 		global $phpFlickr;
 		$token = $phpFlickr->auth_getToken($_POST['frob']);
@@ -791,7 +789,7 @@ class DC_FlickrGallery {
 	 * Generates the settings page
 	 *
 	 */
-	function settings_page() {
+	static function settings_page() {
 		global $phpFlickr;
 		?>
 			<div class="wrap">
@@ -964,13 +962,13 @@ class DC_FlickrGallery {
 	 * Inserts the settings link on the plugin's page
 	 *
 	 */
-	function settings_link($links) {
+	static function settings_link($links) {
 		$settings_link = '<a href="options-general.php?page=' . plugin_basename(__FILE__) . '">' . __('Settings', 'flickr-gallery') . '</a>'; 
 		array_unshift( $links, $settings_link ); 
 		return $links; 
 	}
 	
-	function get_photo_url($nsid = null) {
+	static function get_photo_url($nsid = null) {
 		if ( is_null($nsid) ) return 'http://flickr.com/photo.gne?id=';
 		
 		global $phpFlickr;
@@ -978,7 +976,7 @@ class DC_FlickrGallery {
 		return empty($url) ? 'http://flickr.com/photo.gne?id=' : $url;
 	}
 	
-	function ajax_pagination() {
+	static function ajax_pagination() {
 		global $phpFlickr;
 		$pager = unserialize(stripslashes($_POST['pager']));
 		$pager->set_phpFlickr($phpFlickr);
@@ -1002,7 +1000,7 @@ class DC_FlickrGallery {
 		exit;
 	}
 	
-	function ajax_photoset($id, $page = 1) {
+	static function ajax_photoset($id, $page = 1) {
 		global $phpFlickr;
 		$pager = new phpFlickr_pager($phpFlickr, 'flickr.photosets.getPhotos', array(
 			'photoset_id' => $id,
@@ -1034,7 +1032,7 @@ class DC_FlickrGallery {
 		exit;
 	}
 	
-	function ajax_sizes() {
+	static function ajax_sizes() {
 		global $phpFlickr;
 		if ( get_option('fg-flightbox-description') ) {
 			$result = $phpFlickr->photos_getInfo($_POST['id']);
@@ -1047,7 +1045,7 @@ class DC_FlickrGallery {
 
 	}
 	
-	function header() {
+	static function header() {
 		?>
 			<script type="text/javascript">
 				var get_sizes = null;
@@ -1076,7 +1074,7 @@ class DC_FlickrGallery {
 		<?php 
 	}
 	
-	function footer() {
+	static function footer() {
 		?>
 			<script type="text/javascript">
 				(function($){
@@ -1088,7 +1086,7 @@ class DC_FlickrGallery {
 		<?php
 	}
 	
-	function load_tabs_setting($tabs) {
+	static function load_tabs_setting($tabs) {
 		if ( !$selected = get_option('fg-tabs') ) {
 			$selected = array('photostream', 'sets', 'interesting');
 		}
@@ -1100,7 +1098,7 @@ class DC_FlickrGallery {
 		return $tabs;
 	}
 	
-	function auth_init() {
+	static function auth_init() {
 		session_start();
 		global $phpFlickr;
 		unset($_SESSION['phpFlickr_auth_token']);
@@ -1121,11 +1119,11 @@ class DC_FlickrGallery {
 
 }
 
-//add_shortcode('flickr-gallery', array('DC_FlickrGallery', 'gallery'));
-//remove_shortcode('flickr'); add_shortcode('flickr', array('DC_FlickrGallery', 'image'));
+add_shortcode('flickr-gallery', array('DC_FlickrGallery', 'gallery'));
+add_shortcode('flickr', array('DC_FlickrGallery', 'image'));
 
 add_action('admin_menu', array('DC_FlickrGallery', 'add_settings_page'));
-add_action('init', array('DC_FlickrGallery', 'init'), 999);
+add_action('init', array('DC_FlickrGallery', 'init'));
 add_action('wp_ajax_flickr_gallery_settings', array('DC_FlickrGallery', 'save_settings'));
 add_action('wp_ajax_flickr_gallery_auth', array('DC_FlickrGallery', 'auth_init'));
 
