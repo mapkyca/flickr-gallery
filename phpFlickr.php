@@ -22,6 +22,7 @@ if ( !class_exists('phpFlickr') ) {
 		@session_start();
 	}
 
+	#[AllowDynamicProperties]
 	class phpFlickr {
 		var $api_key;
 		var $secret;
@@ -58,7 +59,7 @@ if ( !class_exists('phpFlickr') ) {
 		 */
 		var $max_cache_rows = 1000;
 
-		function phpFlickr ($api_key, $secret = NULL, $die_on_error = false) {
+		function __construct ($api_key, $secret = NULL, $die_on_error = false) {
 			//The API Key must be set before any calls can be made.  You can
 			//get your own at https://www.flickr.com/services/api/misc.api_keys.html
 			$this->api_key = $api_key;
@@ -427,7 +428,11 @@ if ( !class_exists('phpFlickr') ) {
 				}
 
 				$photo = realpath($photo);
-				$args['photo'] = '@' . $photo;
+				if (class_exists('CURLFile')) {
+					$args['photo'] = new CURLFile($photo);
+				} else {
+					$args['photo'] = '@' . $photo;
+				}
 
 
 				$curl = curl_init($this->upload_endpoint);
@@ -489,7 +494,11 @@ if ( !class_exists('phpFlickr') ) {
 				}
 
 				$photo = realpath($photo);
-				$args['photo'] = '@' . $photo;
+				if (class_exists('CURLFile')) {
+					$args['photo'] = new CURLFile($photo);
+				} else {
+					$args['photo'] = '@' . $photo;
+				}
 
 
 				$curl = curl_init($this->upload_endpoint);
@@ -550,7 +559,11 @@ if ( !class_exists('phpFlickr') ) {
 				}
 
 				$photo = realpath($photo);
-				$args['photo'] = '@' . $photo;
+				if (class_exists('CURLFile')) {
+					$args['photo'] = new CURLFile($photo);
+				} else {
+					$args['photo'] = '@' . $photo;
+				}
 
 
 				$curl = curl_init($this->replace_endpoint);
@@ -700,7 +713,7 @@ if ( !class_exists('phpFlickr') ) {
 			return $this->call('flickr.blogs.getServices', array());
 		}
 
-		function blogs_postPhoto ($blog_id = NULL, $photo_id, $title, $description, $blog_password = NULL, $service = NULL) {
+		function blogs_postPhoto ($blog_id, $photo_id, $title, $description, $blog_password = NULL, $service = NULL) {
 			/* https://www.flickr.com/services/api/flickr.blogs.postPhoto.html */
 			return $this->call('flickr.blogs.postPhoto', array('blog_id' => $blog_id, 'photo_id' => $photo_id, 'title' => $title, 'description' => $description, 'blog_password' => $blog_password, 'service' => $service));
 		}
@@ -1699,12 +1712,13 @@ if ( !class_exists('phpFlickr') ) {
 }
 
 if ( !class_exists('phpFlickr_pager') ) {
+	#[AllowDynamicProperties]
 	class phpFlickr_pager {
 		var $phpFlickr, $per_page, $method, $args, $results, $global_phpFlickr;
 		var $total = null, $page = 0, $pages = null, $photos, $_extra = null;
 
 
-		function phpFlickr_pager($phpFlickr, $method = null, $args = null, $per_page = 30) {
+		function __construct($phpFlickr, $method = null, $args = null, $per_page = 30) {
 			$this->per_page = $per_page;
 			$this->method = $method;
 			$this->args = $args;
