@@ -142,7 +142,7 @@ class DC_FlickrGallery {
 		return $result;
 	}
 	
-	function cache_get($key) {
+	static function cache_get($key) {
 		global $wpdb;
 		$result = $wpdb->get_row('
 			SELECT 
@@ -1110,7 +1110,7 @@ class DC_FlickrGallery {
 		exit;
 	}
 	
-	function auth_read() {
+	static function auth_read() {
 		if ( is_user_logged_in() && isset($_GET['frob']) ) {
 			global $phpFlickr;
 			$auth = $phpFlickr->auth_getToken($_GET['frob']);
